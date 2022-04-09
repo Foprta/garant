@@ -7,8 +7,10 @@ contract Garant {
     uint32 dealId;
 
     enum DealStatus {
+        NOT_CREATED,
         OPENED,
-        CLOSED
+        DECLINED,
+        DONE
     }
 
     struct DealSide {
@@ -26,11 +28,16 @@ contract Garant {
 
     mapping(uint32 => Deal) public deals;
 
+    event Created(uint32 indexed _id);
+    event Joined(uint32 indexed _id);
+    event Closed(uint32 indexed _id);
+    event Declined(uint32 indexed _id);
+
     // Create a deal by depositing tokens
     function createDeal(uint256 _amount, address _tokenAddress) public payable {
         uint256 amount = getPassedTokensAmount(_amount, _tokenAddress);
 
-        Deal storage deal = deals[dealId++];
+        Deal storage deal = deals[dealId];
 
         deal.creator = DealSide({
             confirmed: false,
@@ -39,6 +46,9 @@ contract Garant {
             tokenAddress: _tokenAddress
         });
         deal.status = DealStatus.OPENED;
+        emit Created(dealId);
+
+        dealId++;
     }
 
     // Join the deal by depositing tokens
@@ -62,6 +72,9 @@ contract Garant {
             amount: amount,
             tokenAddress: _tokenAddress
         });
+
+
+        emit Joined(_dealId);
     }
 
     // Both sides should confirm the deal.
@@ -94,7 +107,9 @@ contract Garant {
             // Send creator tokens to acceptor
             sendToken(creator.sender, acceptor.amount, acceptor.tokenAddress);
 
-            deal.status = DealStatus.CLOSED;
+            deal.status = DealStatus.DONE;
+
+            emit Closed(_dealId);
         }
     }
 
@@ -114,7 +129,9 @@ contract Garant {
         // Return tokens to acceptor
         sendToken(acceptor.sender, acceptor.amount, acceptor.tokenAddress);
 
-        deal.status = DealStatus.CLOSED;
+        deal.status = DealStatus.DECLINED;
+
+        emit Declined(_dealId);
     }
 
     // Send ERC-20 or ETH to receiver
@@ -167,7 +184,7 @@ contract Garant {
     modifier dealOpened(uint32 _dealId) {
         require(
             deals[_dealId].status == DealStatus.OPENED,
-            "Deal is already closed"
+            "Deal is not active"
         );
         _;
     }

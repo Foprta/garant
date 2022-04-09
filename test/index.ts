@@ -49,7 +49,7 @@ describe("Garant", function () {
       expect(deal.creator.confirmed).to.eq(false);
       expect(await testToken1.balanceOf(user1.address)).to.eq(0);
       // Deal
-      expect(deal.status).to.eq(0);
+      expect(deal.status).to.eq(1);
       // Contract
       expect(await testToken1.balanceOf(garant.address)).to.eq(100);
     });
@@ -66,7 +66,7 @@ describe("Garant", function () {
       expect(deal.creator.sender).to.eq(user1.address);
       expect(deal.creator.confirmed).to.eq(false);
       // Deal
-      expect(deal.status).to.eq(0);
+      expect(deal.status).to.eq(1);
       // Contract
       expect(await garant.provider.getBalance(garant.address)).to.eq(100);
     });
@@ -191,6 +191,14 @@ describe("Garant", function () {
       // Assert
       await expect(joinTx).to.be.revertedWith("This deal is already taken");
     });
+
+    it("Revert if deal is not created", async function () {
+      // Act
+      const joinTx = garant.joinDeal(0, 0, NULL_ADDRESS, { value: 50 });
+
+      // Assert
+      await expect(joinTx).to.be.revertedWith("Deal is not active");
+    });
   });
 
   describe("Confirm deal", () => {
@@ -264,7 +272,7 @@ describe("Garant", function () {
       const confirmTx = garant.connect(user2).confirmDeal(0);
 
       // Assert
-      await expect(confirmTx).to.be.revertedWith("Deal is already closed");
+      await expect(confirmTx).to.be.revertedWith("Deal is not active");
     });
   });
 
@@ -279,8 +287,7 @@ describe("Garant", function () {
 
       // Assert
       const deal = await garant.deals(0);
-      expect(deal.status).to.eq(1);
-      expect(await garant.provider.getBalance(garant.address)).to.eq(0);
+      expect(deal.status).to.eq(2);
       expect(await testToken1.balanceOf(user1.address)).to.eq(100);
     });
 
@@ -296,8 +303,7 @@ describe("Garant", function () {
 
       // Assert
       const deal = await garant.deals(0);
-      expect(deal.status).to.eq(1);
-      expect(await garant.provider.getBalance(garant.address)).to.eq(0);
+      expect(deal.status).to.eq(2);
       expect(await testToken1.balanceOf(user1.address)).to.eq(100);
       expect(await testToken2.balanceOf(user2.address)).to.eq(100);
     });
@@ -325,7 +331,7 @@ describe("Garant", function () {
       const revertTx = garant.declineDeal(0);
 
       // Assert
-      await expect(revertTx).to.be.revertedWith("Deal is already closed");
+      await expect(revertTx).to.be.revertedWith("Deal is not active");
     });
   });
 });
