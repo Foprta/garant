@@ -2,7 +2,7 @@
 	import { InlineNotification, ProgressBar, Truncate } from 'carbon-components-svelte';
 	import { NULL_ADDRESS } from '../constants/blockchain.ts';
 	import { ERC20_ABI } from '../contracts/ERC20.ts';
-	import { web3 } from 'svelte-web3';
+	import { selectedAccount, web3 } from 'svelte-web3';
 	import { OwnBigNumber } from '../utils/BN.ts';
 
 	export let dealer;
@@ -31,7 +31,13 @@
 	}
 </script>
 
-<h5>{dealerName}</h5>
+<h5>
+	{dealerName}
+
+	{#if $selectedAccount === dealer.sender.toLowerCase()}
+		(You)
+	{/if}
+</h5>
 
 {#if dealer.sender !== NULL_ADDRESS && tokenName && tokenAmount}
 	<Truncate>{dealer.sender}</Truncate>

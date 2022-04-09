@@ -1,4 +1,4 @@
-export const GARANT_ADDRESS = '0x4cC3E3f03bC8c888914AC047Cb09e0121A2520dA';
+export const GARANT_ADDRESS = '0xcc8A93723FF338c15d908DfBe517eF63F55E71Cf';
 
 export const GARANT_ABI = [
 	{
@@ -12,6 +12,19 @@ export const GARANT_ABI = [
 			}
 		],
 		name: 'Closed',
+		type: 'event'
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: true,
+				internalType: 'uint32',
+				name: '_id',
+				type: 'uint32'
+			}
+		],
+		name: 'Confirmed',
 		type: 'event'
 	},
 	{

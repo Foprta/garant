@@ -30,6 +30,7 @@ contract Garant {
 
     event Created(uint32 indexed _id);
     event Joined(uint32 indexed _id);
+    event Confirmed(uint32 indexed _id);
     event Closed(uint32 indexed _id);
     event Declined(uint32 indexed _id);
 
@@ -110,6 +111,8 @@ contract Garant {
             deal.status = DealStatus.DONE;
 
             emit Closed(_dealId);
+        } else {
+            emit Confirmed(_dealId);
         }
     }
 

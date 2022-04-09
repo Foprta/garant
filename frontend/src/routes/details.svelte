@@ -20,7 +20,13 @@
 	let deal;
 	let dealLoading = false;
 
+	let dealAccepted;
+
 	const garant = new $web3.eth.Contract(GARANT_ABI, GARANT_ADDRESS);
+
+	$: dealAccepted =
+		(deal?.creator.sender.toLowerCase() === $selectedAccount && deal?.creator.confirmed) ||
+		(deal?.acceptor.sender.toLowerCase() === $selectedAccount && deal?.acceptor.confirmed);
 
 	onMount(() => getDeal());
 
@@ -35,7 +41,35 @@
 			garant.methods
 				.deals(dealId)
 				.call()
-				.then((data) => (deal = data))
+				.then((data) => {
+					deal = data;
+
+					// Wait for creation
+					if (deal.creator.sender === NULL_ADDRESS) {
+						garant.events.Created({ _id: dealId }, () => getDeal());
+						return;
+					}
+
+					// Wait for joining
+					if (deal.acceptor.sender === NULL_ADDRESS) {
+						garant.events.Joined({ _id: dealId }, () => getDeal());
+						garant.events.Declined({ _id: dealId }, () => getDeal());
+						return;
+					}
+
+					// Wait for accepting
+					if (!deal.creator.confirmed && !deal.acceptor.confirmed) {
+						garant.events.Confirmed({ _id: dealId }, () => getDeal());
+						garant.events.Declined({ _id: dealId }, () => getDeal());
+						return;
+					}
+
+					// Wait for closing
+					if (deal.creator.confirmed !== deal.acceptor.confirmed) {
+						garant.events.Closed({ _id: dealId }, () => getDeal());
+						garant.events.Declined({ _id: dealId }, () => getDeal());
+					}
+				})
 				.finally(() => (dealLoading = false));
 		}
 	};
@@ -46,10 +80,7 @@
 				goto('/details?id=' + dealId);
 			}
 
-			garant.methods
-				.confirmDeal(dealId)
-				.send({ from: $selectedAccount })
-				.then(() => getDeal());
+			garant.methods.confirmDeal(dealId).send({ from: $selectedAccount });
 		}
 	};
 
@@ -59,10 +90,7 @@
 				goto('/details?id=' + dealId);
 			}
 
-			garant.methods
-				.declineDeal(dealId)
-				.send({ from: $selectedAccount })
-				.then(() => getDeal());
+			garant.methods.declineDeal(dealId).send({ from: $selectedAccount });
 		}
 	};
 </script>
@@ -100,7 +128,7 @@
 					<Button size="field" kind="danger" on:click={declineDeal}>Cancel Deal</Button>
 				</Column>
 
-				{#if deal.acceptor?.sender !== NULL_ADDRESS}
+				{#if deal.status === '1' && !dealAccepted && deal.acceptor?.sender !== NULL_ADDRESS}
 					<Column>
 						<Button size="field" on:click={acceptDeal}>Accept Deal</Button>
 					</Column>

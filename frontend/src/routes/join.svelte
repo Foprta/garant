@@ -68,7 +68,7 @@
 
 	<TokenSelector bind:tokenAddress bind:tokenAmount />
 
-	{#if tokenAmount > 0}
+	{#if tokenAmount > 0 && dealId != null}
 		<FormGroup>
 			<Button on:click={join}>Join Deal</Button>
 		</FormGroup>
